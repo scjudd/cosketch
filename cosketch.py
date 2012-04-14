@@ -8,6 +8,13 @@ from gevent.queue import Queue
 from requests import async
 import requests
 
+class Event(object):
+    def __init__(self, event):
+        self.user_id = event[0][1]
+        self.timestamp = int(event[0][2])
+        self.type = event[0][3][0]
+        self.args = event[0][3][1:]
+
 class CosketchSession(object):
     
     def __init__(self, nick, channel):
@@ -73,38 +80,37 @@ class CosketchSession(object):
 
             self.event_queue.put(parsed['dl'])
 
-
     def event_dispatcher(self):
         while True:
-            event = self.event_queue.get()
+            event = Event(self.event_queue.get())
 
             # older than 10 secs?
-            if event[0][2]-10000 > int(time.time()*1000):
+            if event.timestamp-10000 > int(time.time()*1000):
                 continue
 
-            print 'EVENT:',event
+            print 'EVENT:',event.type,':',event.args
 
             try:
-                if event[0][3][0] == 'ChangedName' and \
-                   event[0][3][2] == self.nick:
-                    self.user_id = event[0][3][1]
+                if event.type == 'ChangedName' and event.args[0] == self.nick:
+                    self.user_id = event.user_id
 
-                if event[0][3][0] == 'Chat' and event[0][1] != self.user_id:
-                    if event[0][3][1] == '!fortune':
+                if event.type == 'Chat' and event.user_id != self.user_id:
+                    if event.args[0] == '!fortune':
                         import os
                         p = os.popen('fortune -s')
                         fortune = p.read()
                         fortune = ' '.join(fortune.split()).replace('\n',' ')
                         self.chat(fortune)
-                    elif event[0][3][1].split()[0] == '!rand':
+                    elif event.args[0].split()[0] == '!rand':
                         from random import randrange
-                        for i in xrange(0, int(event[0][3][1].split()[1])):
+                        n = int(event.args[0].split()[1])
+                        for i in xrange(0, n):
                             x1, y1 = randrange(0,800), randrange(0,600)
                             x2, y2 = randrange(0,800), randrange(0,600)
                             width = randrange(1,5)
                             self.stroke([x1, y1, x2, y2], '#000000', width)
-                    elif event[0][3][1] == '!hello':
-                        self.chat('hello " world')
+                    elif event.args[0] == '!hello':
+                        self.chat('hello world')
             except:
                 pass
     
@@ -134,7 +140,7 @@ class CosketchSession(object):
 
 if __name__ == '__main__':
 
-    c = CosketchSession('sketchr', 'udderweb2')
+    c = CosketchSession('sketchr', 'udderweb3')
 
     points = [(303,183),(301,185),(299,187),(298,189),(295,191),(293,194),
               (291,196),(288,198),(286,200),(284,202),(281,204),(279,205),
