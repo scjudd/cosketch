@@ -5,6 +5,7 @@ from urllib import urlencode
 import gevent
 from gevent.queue import Queue
 
+from requests import async
 import requests
 
 class CosketchSession(object):
