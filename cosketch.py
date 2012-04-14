@@ -10,10 +10,14 @@ import requests
 
 class Event(object):
     def __init__(self, event):
+        self.id = event[0][0]
         self.user_id = event[0][1]
         self.timestamp = int(event[0][2])
         self.type = event[0][3][0]
         self.args = event[0][3][1:]
+
+        if self.type=="Chat":
+            self.message = self.args[0]
 
 class CosketchSession(object):
     
@@ -149,17 +153,17 @@ if __name__ == '__main__':
     c.stroke([100,0,100,200], '#0000FF', 5)
 
     def hello(session, event):
-        if event.args[0] == '!hello':
+        if event.message == '!hello':
             session.chat('hello world!')
 
     def yo(session, event):
-        if event.args[0] == 'yo':
+        if event.message == 'yo':
             session.chat('wuddup dawg')
 
     def random_lines(session, event):
         from random import randrange
-        if '!rand' in event.args[0]:
-            n = int(event.args[0].split()[1])
+        if '!rand' in event.message:
+            n = int(event.message.split()[1])
             for i in xrange(0, n):
                 x1, y1 = randrange(0,800), randrange(0,600)
                 x2, y2 = randrange(0,800), randrange(0,600)
@@ -168,12 +172,11 @@ if __name__ == '__main__':
 
     def fortune(session, event):
         import os
-        if event.args[0] == '!fortune':
+        if event.message == '!fortune':
             p = os.popen('fortune -s')
             fortune = p.read()
             fortune = ' '.join(fortune.split()).replace('\n',' ')
             session.chat(fortune)
-
 
     c.register_event_handler('Chat', hello)
     c.register_event_handler('Chat', yo)
