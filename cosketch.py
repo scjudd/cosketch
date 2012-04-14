@@ -29,6 +29,7 @@ class CosketchSession(object):
 
         self.action_queue = Queue()
         self.event_queue = Queue()
+        self.event_handlers = {}
 
         self.session = requests.session()
 
@@ -78,39 +79,27 @@ class CosketchSession(object):
             self.lc = parsed['myLast']
             self._pc += 1
 
-            self.event_queue.put(parsed['dl'])
+            if self.lc > -1:
+                self.event_queue.put(parsed['dl'])
+
+    def register_event_handler(self, event_type, callback):
+        if event_type not in self.event_handlers:
+            self.event_handlers[event_type] = []
+
+        self.event_handlers[event_type].append(callback)
 
     def event_dispatcher(self):
         while True:
             event = Event(self.event_queue.get())
-
-            # older than 10 secs?
-            if event.timestamp-10000 > int(time.time()*1000):
-                continue
-
-            print 'EVENT:',event.type,':',event.args
+            print 'EVENT:',event.type,':',event.user_id,':',event.args
 
             try:
                 if event.type == 'ChangedName' and event.args[0] == self.nick:
                     self.user_id = event.user_id
 
-                if event.type == 'Chat' and event.user_id != self.user_id:
-                    if event.args[0] == '!fortune':
-                        import os
-                        p = os.popen('fortune -s')
-                        fortune = p.read()
-                        fortune = ' '.join(fortune.split()).replace('\n',' ')
-                        self.chat(fortune)
-                    elif event.args[0].split()[0] == '!rand':
-                        from random import randrange
-                        n = int(event.args[0].split()[1])
-                        for i in xrange(0, n):
-                            x1, y1 = randrange(0,800), randrange(0,600)
-                            x2, y2 = randrange(0,800), randrange(0,600)
-                            width = randrange(1,5)
-                            self.stroke([x1, y1, x2, y2], '#000000', width)
-                    elif event.args[0] == '!hello':
-                        self.chat('hello world')
+                if event.type in self.event_handlers:
+                    for cb in self.event_handlers[event.type]:
+                        cb(self, event)
             except:
                 pass
     
@@ -158,5 +147,37 @@ if __name__ == '__main__':
     c.stroke([0,0,200,200], '#FF0000', 5)
     c.stroke([200,0,0,200], '#00FF00', 5)
     c.stroke([100,0,100,200], '#0000FF', 5)
+
+    def hello(session, event):
+        if event.args[0] == '!hello':
+            session.chat('hello world!')
+
+    def yo(session, event):
+        if event.args[0] == 'yo':
+            session.chat('wuddup dawg')
+
+    def random_lines(session, event):
+        from random import randrange
+        if '!rand' in event.args[0]:
+            n = int(event.args[0].split()[1])
+            for i in xrange(0, n):
+                x1, y1 = randrange(0,800), randrange(0,600)
+                x2, y2 = randrange(0,800), randrange(0,600)
+                width = randrange(1,5)
+                session.stroke([x1, y1, x2, y2], '#000000', width)
+
+    def fortune(session, event):
+        import os
+        if event.args[0] == '!fortune':
+            p = os.popen('fortune -s')
+            fortune = p.read()
+            fortune = ' '.join(fortune.split()).replace('\n',' ')
+            session.chat(fortune)
+
+
+    c.register_event_handler('Chat', hello)
+    c.register_event_handler('Chat', yo)
+    c.register_event_handler('Chat', random_lines)
+    c.register_event_handler('Chat', fortune)
 
     c.run()
