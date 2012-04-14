@@ -119,7 +119,7 @@ class CosketchSession(object):
             points = [p for point in points for p in point]
 
         data = self.d('["Stroke",0,"%s",%s,%s,255]' % (color,width,points))
-        self.stroke_queue.append(data)
+        self.action_queue.append(data)
 
     def set_nick(self, nick):
         self.nick = nick.replace('"','\\"')
