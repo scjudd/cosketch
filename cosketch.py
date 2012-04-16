@@ -103,7 +103,11 @@ class CosketchSession(object):
 
                 if event.type in self.event_handlers:
                     for cb in self.event_handlers[event.type]:
-                        cb(self, event)
+                        try:
+                            cb(self, event)
+                        except:
+                            import traceback
+                            traceback.print_exc()
             except:
                 pass
     
@@ -120,6 +124,16 @@ class CosketchSession(object):
 
         data = self.d('["Stroke",0,"%s",%s,%s,255]' % (color,width,points))
         self.action_queue.put(data)
+    def text(self,text,position,color="#000000",size=14):
+        data = self.d('["Text",{x},{y},"{text}","{color}",{size}]'.format(
+            x = position[0], 
+            y=position[1], 
+            text=text, 
+            color=color, 
+            size=size))
+        self.action_queue.put(data)
+
+
 
     def set_nick(self, nick):
         self.nick = nick.replace('"','\\"')
