@@ -117,23 +117,22 @@ class CosketchSession(object):
             response = self.session.post(self.upload_url, data)
             print response.content
 
-    def stroke(self, points, color, width):
+    def stroke(self, points, color="#000000", width=5):
 
         if type(points[0]) is not int:
             points = [p for point in points for p in point]
 
         data = self.d('["Stroke",0,"%s",%s,%s,255]' % (color,width,points))
         self.action_queue.put(data)
-    def text(self,text,position,color="#000000",size=14):
+
+    def text(self, text, position, color="#000000", size=14):
         data = self.d('["Text",{x},{y},"{text}","{color}",{size}]'.format(
-            x = position[0], 
-            y=position[1], 
-            text=text, 
-            color=color, 
-            size=size))
+            x = position[0],
+            y = position[1],
+            text = text, 
+            color = color, 
+            size = size))
         self.action_queue.put(data)
-
-
 
     def set_nick(self, nick):
         self.nick = nick.replace('"','\\"')
